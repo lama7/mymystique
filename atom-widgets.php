@@ -5171,7 +5171,8 @@ class AtomWidgetTwitter extends AtomWidget{
         $response = wp_remote_retrieve_body(wp_remote_request("http://twitter.com/users/show/{$user}.json"));
         if(!is_array($userdata = json_decode($response, true))) $error = true;
       }
-      $response = wp_remote_retrieve_body(wp_remote_request("http://twitter.com/statuses/user_timeline/{$user}.json"));
+      $response =
+          wp_remote_retrieve_body(wp_remote_request("https://api.twitter.com/1/statuses/user_timeline/{$user}.json?include_entities=1"));
       if(!is_array($tweets = json_decode($response, true))) $error = true;
 
       if(!$error){
@@ -5192,6 +5193,8 @@ class AtomWidgetTwitter extends AtomWidget{
           $i = 0;
           foreach($tweets as $tweet){
             $data['tweets'][$i]['text'] = esc_attr(strip_tags($tweet['text']));
+            $data['tweets'][$i]['urls'] = $tweet['entities']['urls'];
+            $data['tweets'][$i]['hashtags'] = $tweet['entities']['hashtags'];
 
             $tweet_time = esc_attr(strip_tags($tweet['created_at']));
             $data['tweets'][$i]['created_at'] = abs(strtotime("{$tweet_time} UTC"));
@@ -5230,10 +5233,27 @@ class AtomWidgetTwitter extends AtomWidget{
           $pattern = '/\@(\w+)/';
           $replace = '<a rel="nofollow" href="http://twitter.com/$1">@$1</a>';
           $tweet['text'] = preg_replace($pattern, $replace, $tweet['text']);
-          $tweet['text'] = convert_smilies(make_clickable($tweet['text']));
+          //$tweet['text'] = convert_smilies(make_clickable($tweet['text']));
+          if (!empty($tweet['urls'])){
+              foreach($tweet['urls'] as $url){
+                  $find = $url['url'];
+                  $replace = '<a rel="nofollow" href="'.$find.'">'.$url['expanded_url'].'</a>';
+                  $tweet['text'] = str_replace($find, $replace, $tweet['text']);
+              }
+          }
+
+          if (!empty($tweet['hashtags'])){
+              foreach($tweet['hashtags'] as $hashtag){
+                  $find = '#'.$hashtag['text'];
+                  $replace = '<a rel="nofollow" href="https://twitter.com/#!/search/%23'.$hashtag['text'].'">'.$find.'</a>';
+                  $tweet['text'] = str_replace($find, $replace, $tweet['text']);
+              }
+          }
+          $tweet['text'] = convert_smilies($tweet['text']);
 
           $link = "http://twitter.com/{$user}/statuses/{$tweet['id']}";
           echo '<li class="entry">'.$tweet['text'].'<a class="date" href="'.$link.'" rel="nofollow">'.atom()->getTimeSince($tweet['created_at'], time()).'</a></li>';
+
           if ($i == $count) break;
         }
       ?>
