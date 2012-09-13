@@ -1593,12 +1593,9 @@ class Atom{
 
       // we get a special treat if the logo is made out of 2 or 3 words
       $words = explode(' ', $title);
-      if(!empty($words[1]) && empty($words[3])){
-        $words[1] = '<span class="alt">'.$words[1].'</span>';
-
-        // leave the space here and remove it trough css to avoid seo problems
-        $title = implode(' ', $words);
-      }
+      $wordcnt = count($words);
+      $middle = array_slice($words, 1, $count - 1);
+      $title = $words[0].' <span class="alt">'.implode(' ',$middle).'</span> '.$words[$wordcnt - 1];
 
       $output .= '<a href="'.home_url('/').'">'.$title.'</a>';
 
