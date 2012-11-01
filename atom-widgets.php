@@ -5166,13 +5166,13 @@ class AtomWidgetTwitter extends AtomWidget{
   private function displayTweets($id, $user, $count, $data = false, $showinfo = true, $cache = 90){
     $error = false;
 
-    if(!$data && (($data = get_transient($id)) === false)){
+    if(!$data || (($data = get_transient($id)) === false)){
       if($showinfo){
-        $response = wp_remote_retrieve_body(wp_remote_request("http://twitter.com/users/show/{$user}.json"));
+        //$response = wp_remote_retrieve_body(wp_remote_request("http://twitter.com/users/show/{$user}.json"));
+        $response = wp_remote_retrieve_body(wp_remote_request("https://api.twitter.com/1/users/show.json?screen_name={$user}"));
         if(!is_array($userdata = json_decode($response, true))) $error = true;
       }
-      $response =
-          wp_remote_retrieve_body(wp_remote_request("https://api.twitter.com/1/statuses/user_timeline/{$user}.json?include_entities=1"));
+      $response = wp_remote_retrieve_body(wp_remote_request("https://api.twitter.com/1/statuses/user_timeline/{$user}.json?include_entities=1"));
       if(!is_array($tweets = json_decode($response, true))) $error = true;
 
       if(!$error){
